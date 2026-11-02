@@ -75,9 +75,8 @@ O código utiliza o resistor interno do Arduino (`INPUT_PULLUP`), dispensando re
    ```bash
    pip install -r requirements.txt
    ```
-2. No arquivo `Python/supersenha.py` (ou `Python/supersenha_sem_comentarios.py`), confira as variáveis de configuração no topo do código:
+2. No arquivo `Python/supersenha.py` (ou `Python/supersenha_sem_comentarios.py`), confira a porta serial configurada no topo do código:
    ```python
-   usarArduino = True      # False para testar sem o Arduino conectado
    portaArduino = "com5"   # Ajustar para a porta COM identificada no Arduino IDE
    ```
 3. Execute a interface:

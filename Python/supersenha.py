@@ -4,11 +4,7 @@ import time                         #biblioteca nativa do python
 import serial                       #instalar utilizando o comando "py -m pip install pyserial"
 import os                           #biblioteca nativa do python (usada para achar a pasta do arquivo)
 
-#=================== CONFIGURACAO ===================
-usarArduino = True      #False = modo de teste (sem Arduino) | True = conecta no Arduino
-portaArduino = "com5"   #Conferir a porta em Ferramentas -> Porta no Arduino IDE
-senhaTeste = "1010"     #Senha usada so no modo de teste (simula as chaves DIP)
-#====================================================
+portaArduino = "com5"               #Conferir a porta em Ferramentas -> Porta no Arduino IDE
 
 respostaArduino = ""                #Definicao de uma variavel global
 resultadoNaTela = False             #True quando ja tem um resultado (liberado/errado) na tela
@@ -56,13 +52,12 @@ def limparTela():                   #Limpa os campos, o resultado e volta o LCD 
     digito1.focus()                                         #Volta o cursor para o primeiro campo
     resultadoNaTela = False
     aguardandoResposta = False                              #Ignora qualquer retorno do comando R
-    if usarArduino:
-        ser.write(bytes("R\n", 'UTF-8'))                   #Pede para o Arduino voltar o LCD para "SuperSenha"
-        print("Pedido de limpeza enviado para o Arduino")
+    ser.write(bytes("R\n", 'UTF-8'))                        #Pede para o Arduino voltar o LCD para "SuperSenha"
+    print("Pedido de limpeza enviado para o Arduino")
 
 
 def enviarSenha():                  #Funcao chamada quando o botao "Tentar" e pressionado
-    global respostaArduino, resultadoNaTela, aguardandoResposta
+    global resultadoNaTela, aguardandoResposta
     if resultadoNaTela:                                     #Se ja tem resultado na tela, este clique so limpa
         limparTela()
         return
@@ -75,27 +70,15 @@ def enviarSenha():                  #Funcao chamada quando o botao "Tentar" e pr
 
     senha = digitos[0] + digitos[1] + digitos[2] + digitos[3]   #Junta os 4 digitos, ex: "1010"
     resultadoNaTela = True                                  #Garante que o 2o clique em "Tentar" limpe a tela
-
-    if usarArduino:
-        aguardandoResposta = True                           #Aguarda o OK ou ERRO desta tentativa
-        ser.write(bytes(senha + "\n", 'UTF-8'))             #Envia a senha para o Arduino
-        print("Senha enviada para o Arduino: " + senha)
-        textoResultado.config(text = "Verificando...", fg = "black")
-    else:
-        print("Modo de teste - senha digitada: " + senha)   #Simula a resposta do Arduino
-        if senha == senhaTeste:
-            respostaArduino = "OK"
-        else:
-            respostaArduino = "ERRO"
-        mostrarResultado()
+    aguardandoResposta = True                               #Aguarda o OK ou ERRO desta tentativa
+    ser.write(bytes(senha + "\n", 'UTF-8'))                 #Envia a senha para o Arduino
+    print("Senha enviada para o Arduino: " + senha)
+    textoResultado.config(text = "Verificando...", fg = "black")
 
 
-if usarArduino:
-    ser = serial.Serial(port = portaArduino, baudrate = 9600)   #Estabelece a comunicacao serial com o Arduino
-    print("Conexao serial foi estabelecida!")
-    time.sleep(2.5)                                         #Espera 2,5 segundos (o Arduino reinicia ao conectar)
-else:
-    print("Modo de teste: rodando sem Arduino")
+ser = serial.Serial(port = portaArduino, baudrate = 9600)   #Estabelece a comunicacao serial com o Arduino
+print("Conexao serial foi estabelecida!")
+time.sleep(2.5)                                             #Espera 2,5 segundos (o Arduino reinicia ao conectar)
 
 corFundo = "#8f8f8f"                                        #Cor de fundo cinza mais escuro
 
@@ -169,14 +152,12 @@ textoResultado.place(x = 60, y = 220)
 
 
 def fecharJanela():                 #Libera a porta COM5 ao fechar a janela no X
-    if usarArduino and ser.is_open:
+    if ser.is_open:
         ser.close()
     janela.destroy()
 
 
 janela.protocol("WM_DELETE_WINDOW", fecharJanela)
 
-if usarArduino:
-    janela.after(100, verificarLeituraSerial)               #Comeca a verificar o serial de 100 em 100 ms
-
+janela.after(100, verificarLeituraSerial)                   #Comeca a verificar o serial de 100 em 100 ms
 janela.mainloop()                                           #Comando do loop que deve estar no final do codigo

@@ -4,9 +4,7 @@ import time
 import serial
 import os
 
-usarArduino = True
 portaArduino = "com5"
-senhaTeste = "1010"
 
 respostaArduino = ""
 resultadoNaTela = False
@@ -54,13 +52,12 @@ def limparTela():
     digito1.focus()
     resultadoNaTela = False
     aguardandoResposta = False
-    if usarArduino:
-        ser.write(bytes("R\n", 'UTF-8'))
-        print("Pedido de limpeza enviado para o Arduino")
+    ser.write(bytes("R\n", 'UTF-8'))
+    print("Pedido de limpeza enviado para o Arduino")
 
 
 def enviarSenha():
-    global respostaArduino, resultadoNaTela, aguardandoResposta
+    global resultadoNaTela, aguardandoResposta
     if resultadoNaTela:
         limparTela()
         return
@@ -73,27 +70,15 @@ def enviarSenha():
 
     senha = digitos[0] + digitos[1] + digitos[2] + digitos[3]
     resultadoNaTela = True
-
-    if usarArduino:
-        aguardandoResposta = True
-        ser.write(bytes(senha + "\n", 'UTF-8'))
-        print("Senha enviada para o Arduino: " + senha)
-        textoResultado.config(text = "Verificando...", fg = "black")
-    else:
-        print("Modo de teste - senha digitada: " + senha)
-        if senha == senhaTeste:
-            respostaArduino = "OK"
-        else:
-            respostaArduino = "ERRO"
-        mostrarResultado()
+    aguardandoResposta = True
+    ser.write(bytes(senha + "\n", 'UTF-8'))
+    print("Senha enviada para o Arduino: " + senha)
+    textoResultado.config(text = "Verificando...", fg = "black")
 
 
-if usarArduino:
-    ser = serial.Serial(port = portaArduino, baudrate = 9600)
-    print("Conexao serial foi estabelecida!")
-    time.sleep(2.5)
-else:
-    print("Modo de teste: rodando sem Arduino")
+ser = serial.Serial(port = portaArduino, baudrate = 9600)
+print("Conexao serial foi estabelecida!")
+time.sleep(2.5)
 
 corFundo = "#8f8f8f"
 
@@ -161,14 +146,12 @@ textoResultado.place(x = 60, y = 220)
 
 
 def fecharJanela():
-    if usarArduino and ser.is_open:
+    if ser.is_open:
         ser.close()
     janela.destroy()
 
 
 janela.protocol("WM_DELETE_WINDOW", fecharJanela)
 
-if usarArduino:
-    janela.after(100, verificarLeituraSerial)
-
+janela.after(100, verificarLeituraSerial)
 janela.mainloop()
