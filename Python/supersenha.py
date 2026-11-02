@@ -2,6 +2,7 @@ import tkinter                      #biblioteca nativa do python
 from PIL import ImageTk, Image      #instalar utilizando o comando "py -m pip install pillow"
 import time                         #biblioteca nativa do python
 import serial                       #instalar utilizando o comando "py -m pip install pyserial"
+import os                           #biblioteca nativa do python (usada para achar a pasta do arquivo)
 
 #=================== CONFIGURACAO ===================
 usarArduino = True      #False = modo de teste (sem Arduino) | True = conecta no Arduino
@@ -10,9 +11,13 @@ senhaTeste = "1010"     #Senha usada so no modo de teste (simula as chaves DIP)
 #====================================================
 
 respostaArduino = ""                #Definicao de uma variavel global
+resultadoNaTela = False             #True quando ja tem um resultado (liberado/errado) na tela
+aguardandoResposta = False          #True apenas quando enviou uma senha de 4 digitos e espera OK/ERRO
 
 
 def mostrarResultado():             #Atualiza a tela de acordo com a resposta
+    global resultadoNaTela
+    resultadoNaTela = True                                  #O proximo clique em "Tentar" vai limpar a tela
     if respostaArduino == "OK":
         textoResultado.config(text = "ACESSO LIBERADO!", fg = "green")
     else:
@@ -20,11 +25,14 @@ def mostrarResultado():             #Atualiza a tela de acordo com a resposta
 
 
 def verificarLeituraSerial():       #Funcao chamada de 100 em 100 ms
-    global respostaArduino                                  #Considera o uso da variavel global
+    global respostaArduino, aguardandoResposta              #Considera o uso das variaveis globais
     if ser.in_waiting > 0:                                  #So le se o Arduino mandou alguma coisa
-        respostaArduino = ser.readline().decode('UTF-8').strip()   #Le a linha e transforma em texto
-        print("Recebendo sinal do Arduino: " + respostaArduino)
-        mostrarResultado()
+        recebido = ser.readline().decode('UTF-8').strip()   #Le a linha e transforma em texto
+        if aguardandoResposta:                              #So mostra resultado se realmente enviou uma senha
+            respostaArduino = recebido
+            aguardandoResposta = False
+            print("Recebendo sinal do Arduino: " + respostaArduino)
+            mostrarResultado()
     janela.after(100, verificarLeituraSerial)               #Chama a funcao denovo daqui 100 ms
 
 
@@ -38,8 +46,26 @@ def limitarDigito(campoAtual, proximoCampo):    #Limita o campo a 1 caractere (0
         proximoCampo.focus()                    #Pula o cursor automaticamente para o proximo campo
 
 
+def limparTela():                   #Limpa os campos, o resultado e volta o LCD para a tela inicial
+    global resultadoNaTela, aguardandoResposta
+    digito1.delete(0, "end")                                #Apaga o que estava nos 4 campos
+    digito2.delete(0, "end")
+    digito3.delete(0, "end")
+    digito4.delete(0, "end")
+    textoResultado.config(text = "")                        #Apaga o "ACESSO LIBERADO!" / "SENHA ERRADA!"
+    digito1.focus()                                         #Volta o cursor para o primeiro campo
+    resultadoNaTela = False
+    aguardandoResposta = False                              #Ignora qualquer retorno do comando R
+    if usarArduino:
+        ser.write(bytes("R\n", 'UTF-8'))                   #Pede para o Arduino voltar o LCD para "SuperSenha"
+        print("Pedido de limpeza enviado para o Arduino")
+
+
 def enviarSenha():                  #Funcao chamada quando o botao "Tentar" e pressionado
-    global respostaArduino
+    global respostaArduino, resultadoNaTela, aguardandoResposta
+    if resultadoNaTela:                                     #Se ja tem resultado na tela, este clique so limpa
+        limparTela()
+        return
     digitos = [digito1.get(), digito2.get(), digito3.get(), digito4.get()]   #Coleta o que foi digitado
 
     for d in digitos:                                       #Confere se cada campo tem 0 ou 1
@@ -48,8 +74,10 @@ def enviarSenha():                  #Funcao chamada quando o botao "Tentar" e pr
             return
 
     senha = digitos[0] + digitos[1] + digitos[2] + digitos[3]   #Junta os 4 digitos, ex: "1010"
+    resultadoNaTela = True                                  #Garante que o 2o clique em "Tentar" limpe a tela
 
     if usarArduino:
+        aguardandoResposta = True                           #Aguarda o OK ou ERRO desta tentativa
         ser.write(bytes(senha + "\n", 'UTF-8'))             #Envia a senha para o Arduino
         print("Senha enviada para o Arduino: " + senha)
         textoResultado.config(text = "Verificando...", fg = "black")
@@ -78,7 +106,8 @@ janela.title("SuperSenha - Guilherme, Maicon, Mario, Matheus e Vinicius")   #Nom
 janela.config(bg = corFundo)
 
 #Logo da UNIARA (o arquivo logoUniara.png deve estar na mesma pasta do .py)
-figuraUniara = Image.open("logoUniara.png")
+pastaDoArquivo = os.path.dirname(os.path.abspath(__file__))        #Pasta onde esta o supersenha.py
+figuraUniara = Image.open(os.path.join(pastaDoArquivo, "logoUniara.png"))   #Abre a logo dessa pasta
 figuraUniara = figuraUniara.resize((200, 200))              #Tamanho maior alinhado com a senha
 figuraUniara = ImageTk.PhotoImage(figuraUniara)
 janela.iconphoto(False, figuraUniara)                       #Coloca a logo da UNIARA como icone da janela (no lugar da pena)
@@ -137,6 +166,15 @@ textoResultado = tkinter.Label(
     bg = corFundo
 )
 textoResultado.place(x = 60, y = 220)
+
+
+def fecharJanela():                 #Libera a porta COM5 ao fechar a janela no X
+    if usarArduino and ser.is_open:
+        ser.close()
+    janela.destroy()
+
+
+janela.protocol("WM_DELETE_WINDOW", fecharJanela)
 
 if usarArduino:
     janela.after(100, verificarLeituraSerial)               #Comeca a verificar o serial de 100 em 100 ms

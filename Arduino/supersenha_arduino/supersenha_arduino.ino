@@ -9,6 +9,15 @@
 // Cria o objeto do LCD no endereco 0x27 com 16 colunas e 2 linhas (se nao aparecer texto, testar 0x3F)
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
+// Mostra a tela inicial no LCD (usada no inicio e quando o Python manda "R")
+void telaInicial() {
+  lcd.clear();                      //Limpa a tela
+  lcd.setCursor(0, 0);              //Posiciona na coluna 0, linha 0
+  lcd.print("   SuperSenha   ");
+  lcd.setCursor(0, 1);              //Posiciona na coluna 0, linha 1
+  lcd.print("Aguardando...   ");
+}
+
 void setup() {
   Serial.begin(9600);               //Inicia a comunicacao serial na mesma velocidade do Python (9600 b/s)
 
@@ -22,17 +31,22 @@ void setup() {
   // Inicializa o display LCD I2C
   lcd.init();                       //Inicia o display LCD
   lcd.backlight();                  //Liga a luz de fundo do LCD
-  lcd.clear();                      //Limpa a tela
-  lcd.setCursor(0, 0);              //Posiciona na coluna 0, linha 0
-  lcd.print("   SuperSenha   ");
-  lcd.setCursor(0, 1);              //Posiciona na coluna 0, linha 1
-  lcd.print("Aguardando...   ");
+  telaInicial();                    //Mostra a tela inicial "SuperSenha / Aguardando..."
 }
 
 void loop() {
   if (Serial.available() > 0) {                             //Verifica se chegou alguma senha enviada pelo Python
     String senhaDigitada = Serial.readStringUntil('\n');    //Le a senha ate a quebra de linha (ex: "1010")
     senhaDigitada.trim();                                   //Remove quebras de linha ou espacos extras
+
+    if (senhaDigitada.length() == 0) {                      //Ignora leituras vazias
+      return;
+    }
+
+    if (senhaDigitada == "R") {                             //"R" = pedido do Python para limpar (reset)
+      telaInicial();                                        //Volta o LCD para "SuperSenha / Aguardando..."
+      return;                                               //Nao compara senha nem responde nada
+    }
 
     // Monta a senha atual definida nas 4 chaves do DIP switch
     // Como usamos INPUT_PULLUP, quando a chave esta em ON (conectada ao GND), a leitura e LOW ("1")
@@ -56,4 +70,3 @@ void loop() {
     }
   }
 }
-

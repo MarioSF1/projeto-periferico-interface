@@ -14,6 +14,7 @@ O sistema consiste em um validador de senha de 4 dígitos binários (`0` e `1`) 
 2. Na interface gráfica desenvolvida em **Python (Tkinter)**, o usuário digita os 4 bits da senha e clica no botão **Tentar**.
 3. A senha é enviada pela porta serial (`9600 baud`) para o Arduino UNO, que compara o valor recebido com a leitura atual das chaves DIP.
 4. O resultado é exibido tanto no **Display LCD 16x2 I2C** quanto na interface do computador (**ACESSO LIBERADO!** ou **SENHA ERRADA!**).
+5. Um segundo clique no botão **Tentar** limpa os campos da interface e envia o comando de reset (`R`) para o Arduino, retornando o LCD para a tela inicial (`SuperSenha / Aguardando...`).
 
 ---
 
@@ -22,15 +23,18 @@ O sistema consiste em um validador de senha de 4 dígitos binários (`0` e `1`) 
 ```text
 ├── Arduino/
 │   ├── supersenha_arduino/
-│   │   └── supersenha_arduino.ino        # Código principal do Arduino UNO
+│   │   └── supersenha_arduino.ino               # Código principal do Arduino UNO (comentado)
+│   ├── supersenha_sem_comentarios/
+│   │   └── supersenha_sem_comentarios.ino       # Código do Arduino UNO sem comentários (apresentação)
 │   ├── scanner_i2c/
-│   │   └── scanner_i2c.ino               # Utilitário para identificar o endereço do LCD I2C
+│   │   └── scanner_i2c.ino                      # Utilitário para identificar o endereço do LCD I2C
 │   └── Guia_Estudo_Arduino_SuperSenha.pdf
 ├── Python/
-│   ├── supersenha.py                     # Interface gráfica (Tkinter + PySerial)
-│   ├── logoUniara.png                    # Logo utilizada na interface
+│   ├── supersenha.py                            # Interface gráfica comentada (Tkinter + PySerial)
+│   ├── supersenha_sem_comentarios.py            # Interface gráfica sem comentários (apresentação)
+│   ├── logoUniara.png                           # Logo utilizada na interface
 │   └── Guia_Estudo_Python_SuperSenha.pdf
-└── requirements.txt                      # Dependências do Python
+└── requirements.txt                             # Dependências do Python
 ```
 
 ---
@@ -61,7 +65,7 @@ O código utiliza o resistor interno do Arduino (`INPUT_PULLUP`), dispensando re
 ## Como Executar
 
 ### 1. Gravar o código no Arduino
-1. Abra o arquivo `Arduino/supersenha_arduino/supersenha_arduino.ino` no **Arduino IDE**.
+1. Abra o arquivo `Arduino/supersenha_arduino/supersenha_arduino.ino` (ou `Arduino/supersenha_sem_comentarios/supersenha_sem_comentarios.ino`) no **Arduino IDE**.
 2. No Gerenciador de Bibliotecas, instale a biblioteca **LiquidCrystal I2C** (de *Frank de Brabander*).
 3. Selecione a placa **Arduino Uno** e a porta **COM** correspondente em *Ferramentas > Porta*.
 4. Faça o upload para a placa e **feche o Monitor Serial** (para liberar a porta COM para o Python).
@@ -71,7 +75,7 @@ O código utiliza o resistor interno do Arduino (`INPUT_PULLUP`), dispensando re
    ```bash
    pip install -r requirements.txt
    ```
-2. No arquivo `Python/supersenha.py`, confira as variáveis de configuração no topo do código:
+2. No arquivo `Python/supersenha.py` (ou `Python/supersenha_sem_comentarios.py`), confira as variáveis de configuração no topo do código:
    ```python
    usarArduino = True      # False para testar sem o Arduino conectado
    portaArduino = "com5"   # Ajustar para a porta COM identificada no Arduino IDE
